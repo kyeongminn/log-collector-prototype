@@ -290,3 +290,14 @@
 /* 로고 버튼 */
 .brand{width:100%;border:0;background:none;cursor:pointer;text-align:left}
 .brand:hover .brand-logo,.brand:hover .brand-logo-mark{opacity:.85}
+
+/* 상단바 정렬: 첫 항목 글자를 본문 왼쪽 선에 맞추고, 이름과 값을 붙여서 일정한 간격으로 */
+.top-stats{gap:0;margin:0 16px 0 -14px;justify-content:flex-start}
+.top-stat{width:auto;justify-content:flex-start;align-items:baseline;gap:8px;padding:6px 14px}
+.top-stat.blue{width:auto}
+.top-stat span{font-size:9.5px}
+.top-stat strong{min-width:46px;text-align:left}
+.top-stat.blue strong{min-width:72px}
+.top-actions{gap:16px}
+@media(max-width:1150px){.top-stats{margin-left:-10px}.top-stat{width:auto;padding:6px 10px}.top-stat.blue{width:auto}}
+@media(max-width:1150px){.topbar{padding:0 20px}}
