@@ -301,3 +301,29 @@
 .top-actions{gap:16px}
 @media(max-width:1150px){.top-stats{margin-left:-10px}.top-stat{width:auto;padding:6px 10px}.top-stat.blue{width:auto}}
 @media(max-width:1150px){.topbar{padding:0 20px}}
+
+/* 기본 배경 */
+:root{background:#FAFAFA}
+.model-wrap,.viewer-stage{background:radial-gradient(ellipse at center,#f3f4f6,#FAFAFA 70%)}
+
+/* 레일 맵: 카드 경계 없이 배경 위에 바로 */
+.rail-panel.bare{border:0;background:transparent;border-radius:0;overflow:visible;box-shadow:none}
+.rail-panel.bare .rail-map{background:transparent;overflow:hidden}
+.rail-panel.bare .rail-svg rect[fill="url(#dots)"]{display:none}
+.rail-panel.bare .map-footer{border-top:0;padding:6px 2px 0}
+.rail-panel.bare .map-location{left:2px;top:4px}
+.rail-panel.bare .map-legend{left:2px;bottom:6px}
+.rail-panel.bare .zoom-controls{right:2px;bottom:6px}
+.map-tools{position:absolute;top:0;right:2px;z-index:2;display:flex;align-items:center;gap:8px}
+.map-tools select{font-size:10px;padding-top:6px;padding-bottom:6px}
+/* 레일 맵 위·아래에 도구 줄을 두어 레일을 덮지 않게 */
+.rail-panel.bare .rail-map{padding:38px 0 46px;box-sizing:border-box}
+.rail-panel.bare .map-location{top:10px}
+.rail-panel.bare .map-tools{top:2px}
+.rail-panel.bare .map-legend{bottom:2px}
+.rail-panel.bare .zoom-controls{bottom:2px}
+
+/* 배경 #FDFDFD, 상단바도 같은 색으로 하고 경계선 대신 아래쪽 그림자 */
+:root{background:#FDFDFD}
+.model-wrap,.viewer-stage{background:radial-gradient(ellipse at center,#f3f4f6,#FDFDFD 70%)}
+.topbar{background:#FDFDFD;border-bottom:0;box-shadow:0 1px 2px rgba(30,45,70,.05),0 4px 12px rgba(30,45,70,.06)}

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Icon, Badge, type IconName } from './ui';
 import LogsPanel from './LogsPanel';
 import LogDetailModal from './LogDetailModal';
@@ -28,7 +28,16 @@ export default function App() {
   const [listFilter, setListFilter] = useState<ListFilter>('전체');
   // 앞·뒤 차량 이동 시 3D 뷰 스와이프 효과 (n 이 바뀔 때마다 애니메이션 재생)
   const [swipe, setSwipe] = useState<{ dir: 'prev' | 'next'; n: number }>({ dir: 'next', n: 0 });
-  function goNeighbor(dir: 'prev' | 'next') { const id = dir === 'next' ? neighbors.ahead?.id : neighbors.behind?.id; const v = vehicles.find(x => x.id === id); if (!v) return; chooseVehicle(v); setSwipe(sw => ({ dir, n: sw.n + 1 })); }
+  // 3D 캔버스를 다시 만들지 않고(깜빡임 원인) 감싼 요소에만 애니메이션을 건다. 그리기 전에 시작해야 새 화면이 먼저 보이지 않는다.
+  const stageRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!swipe.n || !el) return;
+    for (const a of el.getAnimations()) a.cancel();
+    const from = swipe.dir === 'next' ? 70 : -70;
+    el.animate([{ transform: `translateX(${from}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.7,.2,1)' });
+  }, [swipe]);
+  function goNeighbor(dir: 'prev' | 'next') { const id = dir === 'prev' ? neighbors.ahead?.id : neighbors.behind?.id; /* 왼쪽 화살표 = 앞 차량, 오른쪽 = 뒤 차량 */ const v = vehicles.find(x => x.id === id); if (!v) return; chooseVehicle(v); setSwipe(sw => ({ dir, n: sw.n + 1 })); }
   /** 상단바 항목 클릭: 해당 필터가 적용된 전체 관제로 이동 */
   function goOverview(filter: ListFilter, scrollTo?: string) {
     setPage('전체 관제'); setSelectedId(null); setListFilter(filter);
@@ -94,14 +103,14 @@ export default function App() {
       <main>
         <div className="page-heading"><div><div className="eyebrow">OHT OPERATIONS</div><h1>{page}</h1><p>{overview ? '전체 레일과 차량 상태를 확인하고, 부품별 로그를 빠르게 탐색하세요.' : page === '로그 조회' ? '원문 검색과 차량·카테고리·판정·시간 범위 필터로 로그를 조회하세요.' : page === '로그 추이' ? '카테고리별 로그 건수와 이상 탐지 추이를 기간별로 확인하세요.'  : page === '이상 모아보기' ? '본문 규칙으로 탐지한 이상·주의 로그를 한곳에서 확인하고 규칙을 조정하세요.' : '차량별 로그를 시간순으로 조회하고 이벤트의 흐름을 확인하세요.'}</p></div><div className="heading-actions"><span className="date">2026. 10. 21 <span>14:32:08 KST</span></span><button className="button" onClick={() => setPaused(!paused)}><span className={`dot ${paused ? 'gray' : 'green'}`} />{paused ? '일시정지' : '실시간'}<Icon name="refresh" size={14} /></button></div></div>
         {overview ? <div className="visual-grid">
-          <section className={`panel rail-panel ${focus ? 'focus' : ''}`}>{focus ? <>
+          <section className={`panel rail-panel ${focus ? 'focus' : 'bare'}`}>{focus ? <>
             <div className="panel-header"><div><h2>차량 3D 뷰 <span className="live-tag">{selected.id}</span></h2><span className="panel-sub">드래그로 회전, 휠로 확대 · 부품을 클릭하면 우측에 상태가 표시됩니다</span></div><div className="panel-tools"><button className="button" onClick={clearSelection}>레일 맵으로 돌아가기</button></div></div>
-            <div className="rail-map viewer-stage"><div key={swipe.n} className={`stage-anim ${swipe.n ? swipe.dir : ''}`}><Suspense fallback={<div className="viewer3d-loading">3D 모델 불러오는 중…</div>}><VehicleViewer3D vehicle={viewerVehicle} part={part} onPart={setPart} /></Suspense></div>
-              <button className="stage-nav prev" disabled={!neighbors.behind} onClick={() => goNeighbor('prev')} title="레일 위 바로 뒤 차량으로 이동" aria-label="뒤 차량으로 이동"><Icon name="chevron" size={22} /><span><small>뒤 차량</small><strong>{neighbors.behind ? neighbors.behind.id : '없음'}</strong>{neighbors.behind && <em>{neighbors.behind.distance.toFixed(1)} m</em>}</span></button>
-              <button className="stage-nav next" disabled={!neighbors.ahead} onClick={() => goNeighbor('next')} title="레일 위 바로 앞 차량으로 이동" aria-label="앞 차량으로 이동"><span><small>앞 차량</small><strong>{neighbors.ahead ? neighbors.ahead.id : '없음'}</strong>{neighbors.ahead && <em>{neighbors.ahead.distance.toFixed(1)} m</em>}</span><Icon name="chevron" size={22} /></button></div>
+            <div className="rail-map viewer-stage"><div ref={stageRef} className="stage-anim"><Suspense fallback={<div className="viewer3d-loading">3D 모델 불러오는 중…</div>}><VehicleViewer3D vehicle={viewerVehicle} part={part} onPart={setPart} /></Suspense></div>
+              <button className="stage-nav prev" disabled={!neighbors.ahead} onClick={() => goNeighbor('prev')} title="레일 위 바로 앞 차량으로 이동" aria-label="앞 차량으로 이동"><Icon name="chevron" size={22} /><span><small>앞 차량</small><strong>{neighbors.ahead ? neighbors.ahead.id : '없음'}</strong>{neighbors.ahead && <em>{neighbors.ahead.distance.toFixed(1)} m</em>}</span></button>
+              <button className="stage-nav next" disabled={!neighbors.behind} onClick={() => goNeighbor('next')} title="레일 위 바로 뒤 차량으로 이동" aria-label="뒤 차량으로 이동"><span><small>뒤 차량</small><strong>{neighbors.behind ? neighbors.behind.id : '없음'}</strong>{neighbors.behind && <em>{neighbors.behind.distance.toFixed(1)} m</em>}</span><Icon name="chevron" size={22} /></button></div>
             <div className="map-footer"><span><Icon name="box" size={14} /> 선택 부품 {part} · 드래그 회전 · 휠 확대 · 부품 클릭 선택</span><span>{displayStatus(selected)}</span></div>
-          </> : <><div className="panel-header"><div><h2>레일 모니터링 <span className="live-tag">LIVE</span></h2><span className="panel-sub">FAB 01 · 1F / 인터베이 루프 + 베이 {map.zones.length}개 · 로드포트 {map.stations.length}</span></div><div className="panel-tools"><select aria-label="구역 선택" value={area} onChange={e => setArea(e.target.value)}>{[['ALL', '전체 구역'], ['MAIN', '외곽 레일'], ...map.zones.map(z => [z.id, z.name])].map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select><button className="icon-button" aria-label="맵 확대" onClick={() => setZoom(zoom === 1 ? 1.5 : 1)}><Icon name="expand" size={16} /></button></div></div>
-            <div className="rail-map"><div className="map-location"><span className="dot blue" /> 1F · 가상 레일 맵 · {map.bounds.w - 4} × {map.bounds.h - 4} m</div>
+          </> : <>
+            <div className="rail-map"><div className="map-location"><span className="dot blue" /> 1F · 가상 레일 맵 · {map.bounds.w - 4} × {map.bounds.h - 4} m</div><div className="map-tools"><select aria-label="구역 선택" value={area} onChange={e => setArea(e.target.value)}>{[['ALL', '전체 구역'], ['MAIN', '외곽 레일'], ...map.zones.map(z => [z.id, z.name])].map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select><button className="icon-button" aria-label="맵 확대" onClick={() => setZoom(zoom === 1 ? 1.5 : 1)}><Icon name="expand" size={16} /></button></div>
               <RailMapView map={map} vehicles={vehicles} selectedId={selectedId ?? ''} onSelect={chooseVehicle} zone={area} statusFilter={listFilter} zoom={zoom} onZoom={setZoom} />
               <div className="map-legend">{[['green', '운행'], ['gray', '대기'], ['amber', '경고'], ['red', '오류'], ['violet', '무수신']].map(([c, t]) => <span key={t}><span className={`dot ${c}`} />{t}</span>)}</div><div className="zoom-controls"><button onClick={() => setZoom(Math.min(3, +(zoom + .25).toFixed(2)))} aria-label="확대">+</button><span>{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(Math.max(.8, +(zoom - .25).toFixed(2)))} aria-label="축소">−</button></div>
             </div><div className="map-footer"><span><Icon name="box" size={14} /> 차량을 선택하면 상세 정보와 부품별 로그를 확인할 수 있습니다. 드래그로 이동, 휠로 확대합니다.</span><span>표시 차량 {vehicles.filter(v => area === 'ALL' || v.area === area).length} / {vehicles.length}</span></div>
