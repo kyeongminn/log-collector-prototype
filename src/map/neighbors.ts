@@ -11,7 +11,8 @@ export interface Neighbor { id: string; distance: number }
 export interface RailNeighbors { ahead: Neighbor | null; behind: Neighbor | null }
 
 const incomingCache = new WeakMap<RailMap, Map<number, MapLink[]>>();
-function incoming(map: RailMap): Map<number, MapLink[]> {
+/** 노드로 들어오는 링크 목록 */
+export function incoming(map: RailMap): Map<number, MapLink[]> {
   let m = incomingCache.get(map);
   if (!m) {
     m = new Map();

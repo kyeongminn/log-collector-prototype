@@ -1,4 +1,4 @@
-export type IconName = 'grid' | 'box' | 'logs' | 'search' | 'alert' | 'settings' | 'bell' | 'chevron' | 'refresh' | 'expand';
+export type IconName = 'grid' | 'box' | 'logs' | 'search' | 'alert' | 'settings' | 'bell' | 'chevron' | 'refresh' | 'expand' | 'undo';
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, string> = {
@@ -12,6 +12,7 @@ export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
     chevron: 'm9 5 7 7-7 7',
     refresh: 'M20 8a8 8 0 1 0 0 8 M20 3v5h-5',
     expand: 'M8 3H3v5 M16 3h5v5 M3 16v5h5 M21 16v5h-5',
+    undo: 'M9 14 4 9l5-5 M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]} /></svg>;
 }

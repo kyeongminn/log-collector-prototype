@@ -4,9 +4,10 @@
 // 실제 수집 서버가 생기면 WebSocket 등으로 받은 로그 줄을 parseLine 에 넣고
 // 그 결과를 resolver.apply 에 넘기는 부분만 바꾸면 된다.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { buildRailMap, zoneAt, type RailMap } from './railMap';
 import { PositionResolver } from './resolver';
+import { trafficCaps } from './traffic';
 import { DemoFleet, type DemoStatus } from './demoFleet';
 import { PART_NAMES, type PartName } from '../partStatus';
 import { LogStream, type LogLine } from '../logs/logStream';
@@ -44,6 +45,8 @@ export function displayStatus(v: { id: string; status: DemoStatus }): VehicleKin
 }
 
 const TICK_MS = 100;
+/** 화면(목록·상단 지표 등)을 다시 그리는 간격. 3D 맵은 live 로 매 틱 위치를 받으므로 화면 전체를 0.1초마다 다시 그리지 않는다 */
+const UI_MS = 500;
 
 function hash(s: string) {
   let h = 2166136261;
@@ -51,18 +54,23 @@ function hash(s: string) {
   return h >>> 0;
 }
 
-export function useFleet(count = 30): { map: RailMap; vehicles: FleetVehicle[]; logStream: LogStream } {
+export function useFleet(count = 30): { map: RailMap; vehicles: FleetVehicle[]; live: RefObject<FleetVehicle[]>; logStream: LogStream } {
   const map = useMemo(() => buildRailMap(), []);
   const [logStream] = useState(() => new LogStream());
   const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
+  /** 매 틱(0.1초) 갱신되는 최신 차량 상태. 3D 맵이 프레임마다 읽는다 */
+  const live = useRef<FleetVehicle[]>([]);
   const engine = useRef<{ fleet: DemoFleet; resolver: PositionResolver; last: number } | null>(null);
 
   useEffect(() => {
     const t0 = Date.now();
     const faults = Object.fromEntries(Object.entries(DEMO_FAULTS).map(([k, v]) => [k, v.status]));
     const fleet = new DemoFleet({ count, seed: 7, faults }, t0);
-    const resolver = new PositionResolver(map);
+    // 오류·무수신 차량은 멈춰 있으므로 F 베이(스토커)에 두고, 다른 차량은 그 베이로 들어가지 않는다(멈춘 차량 뒤에 줄줄이 막히지 않게)
+    const parked = Object.entries(DEMO_FAULTS).filter(([, f]) => f.status === '오류' || f.status === '무수신').map(([id]) => id);
+    const resolver = new PositionResolver(map, { parked, closedZone: 'BAY-F' });
     engine.current = { fleet, resolver, last: t0 };
+    const order = new Map<string, string>();   // 합류 등에서 정한 통과 순서 (틱 사이 유지)
 
     const parts = Object.fromEntries(fleet.vehicles.map(v => [v.id, DEMO_FAULTS[v.id]?.part ?? PART_NAMES[hash(v.id) % PART_NAMES.length]]));
 
@@ -72,28 +80,31 @@ export function useFleet(count = 30): { map: RailMap; vehicles: FleetVehicle[]; 
       for (const [id, ev] of e.fleet.step(now, now - e.last)) { e.resolver.apply(id, ev); logStream.apply(id, ev); }
       logStream.tick(now, e.fleet.vehicles.map(v => ({ id: v.id, status: e.fleet.status(v), driving: v.driving })));
       e.last = now;
-      setVehicles(e.fleet.vehicles.map(v => {
-        const p = e.resolver.position(v.id, now);
+      const pos = new Map(e.fleet.vehicles.map(v => [v.id, e.resolver.position(v.id, now, v.v)]));
+      // 서로 통과하지 못하게: 맵 위 간격으로 다음 틱의 속도 상한을 정한다
+      e.fleet.setCaps(trafficCaps(map, [...pos].map(([id, p]) => ({ id, linkId: p.linkId, progress: p.progress, driving: p.driving, vel: p.vel })), (id, linkId) => e.resolver.pathAhead(id, linkId), (id, linkId) => e.resolver.scaleAt(id, linkId), order));
+      live.current = e.fleet.vehicles.map(v => {
+        const p = pos.get(v.id)!;
         return { id: v.id, status: e.fleet.status(v), part: parts[v.id], area: zoneAt(map, p.x, p.y), x: p.x, y: p.y, heading: p.heading, driving: p.driving, vel: p.vel, linkId: p.linkId, progress: p.progress };
-      }));
+      });
+      if (now - lastUi >= UI_MS) { lastUi = now; setVehicles(live.current); }
     };
+    let lastUi = 0;
     tick();
     const timer = setInterval(tick, TICK_MS);
     return () => clearInterval(timer);
   }, [map, count, logStream]);
 
-  return { map, vehicles, logStream };
+  return { map, vehicles, live, logStream };
 }
 
-/** 로그 스트림의 최신 줄 배열. 0.5초마다 갱신하고, 일시정지 중에는 마지막 화면을 유지한다. */
+/**
+ * 로그 스트림의 최신 줄 배열. 따로 타이머를 두지 않고 화면이 다시 그려질 때(차량 상태 갱신, 0.5초마다) 함께 읽어
+ * 다시 그리는 횟수를 줄인다. 일시정지 중에는 멈춘 시점의 줄을 유지한다.
+ */
 export function useLogLines(stream: LogStream, paused: boolean): LogLine[] {
-  const [lines, setLines] = useState<LogLine[]>(() => stream.snapshot());
-  useEffect(() => {
-    if (paused) return;
-    const update = () => setLines(stream.snapshot());
-    update();
-    const timer = setInterval(update, 500);
-    return () => clearInterval(timer);
-  }, [stream, paused]);
-  return lines;
+  const frozen = useRef<LogLine[] | null>(null);
+  if (paused) return (frozen.current ??= stream.snapshot());
+  frozen.current = null;
+  return stream.snapshot();
 }

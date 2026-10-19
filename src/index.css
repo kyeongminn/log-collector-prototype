@@ -327,3 +327,164 @@
 :root{background:#FDFDFD}
 .model-wrap,.viewer-stage{background:radial-gradient(ellipse at center,#f3f4f6,#FDFDFD 70%)}
 .topbar{background:#FDFDFD;border-bottom:0;box-shadow:0 1px 2px rgba(30,45,70,.05),0 4px 12px rgba(30,45,70,.06)}
+
+/* 로그 표: 열 너비 고정 (내용에 따라 흔들리지 않게) */
+.logs-table{table-layout:fixed;width:100%;min-width:760px}
+.logs-table col.c-time{width:116px}
+.logs-table col.c-vehicle{width:96px}
+.logs-table col.c-cat{width:142px}
+.logs-table col.c-level{width:112px}
+.logs-table col.c-sev{width:76px}
+.logs-table col.c-go{width:48px}
+.logs-table td,.logs-table th{overflow:hidden;text-overflow:ellipsis}
+.logs-table .message-cell{max-width:none}
+.logs-table .message-cell small{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1150px){.logs-table col.c-level{width:96px}.logs-table col.c-cat{width:128px}}
+
+/* ===== 전체 관제 오른쪽: 기기 상세 (레일 맵은 그대로 유지) ===== */
+.device-panel{display:flex;flex-direction:column;height:0;min-height:100%}
+.device-panel .panel-header{padding:12px 14px 10px 16px;min-height:0}
+.device-panel .panel-header h2{font-size:15px;letter-spacing:-.3px;color:#28354a}
+.device-head-right{display:flex;align-items:center;gap:6px}
+.device-head-right .icon-button{font-size:15px;color:#7d8ba0;width:26px;height:26px}
+.device-body{flex:1;min-height:0;overflow-y:auto;padding-bottom:12px}
+.device-stage{position:relative;height:220px;margin:0 6px}
+.device-stage .stage-anim{position:absolute;inset:0}
+.device-stage .viewer3d{background:transparent}
+.device-stage .viewer3d-reset{top:2px;right:4px}
+.device-stage .viewer3d-hint{left:8px;bottom:2px}
+.device-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;display:flex;align-items:center;gap:1px;padding:6px 2px;border:0;background:transparent;color:#2f5f9e}
+.device-nav small{font-size:8px;color:#8b98a9}
+.device-nav.prev{left:0}
+.device-nav.next{right:0}
+.device-nav.prev>svg{transform:rotate(180deg)}
+.device-nav:disabled{opacity:.35;cursor:default}
+.device-nav:hover:not(:disabled) small{color:#2f5f9e}
+.device-panel .vehicle-facts{margin:6px 14px 0}
+.part-list{margin:10px 14px 0}
+.part-list-head{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+.part-list-head span{font-size:10px;font-weight:650;color:#3a4a60}
+.part-list-head small{font-size:8px;color:#a2aab8}
+.part-row{display:grid;grid-template-columns:8px 56px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:7px 8px;border:1px solid #edf0f4;border-radius:5px;background:#fff;text-align:left;margin-bottom:4px}
+.part-row:hover{border-color:#b6c9e4;background:#f6f9fd}
+.part-row strong{font-size:10px;color:#3a4a60;font-weight:600}
+.part-row small{font-size:8.5px;color:#8b98a9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part-row .part-level{margin:0;font-size:7.5px;padding:3px 6px}
+.part-dot{width:7px;height:7px;border-radius:50%;background:#53877d}
+.part-row.warn .part-dot{background:#d69b3b}
+.part-row.err .part-dot{background:#cd5b5b}
+.part-row.warn{border-color:#f1e2c4}
+.part-row.err{border-color:#efc9c9;background:#fffafa}
+.device-panel .part-detail{margin:10px 14px 0}
+.part-back{width:24px;height:24px;border:1px solid #e3e8f0;border-radius:5px;justify-content:center;color:#6683a7;flex-shrink:0}
+.part-back svg{transform:rotate(180deg)}
+
+/* 기기 상세: 3D 모델은 카드 밖(배경 위), 정보는 그 아래 카드에 */
+.device-column{display:flex;flex-direction:column;gap:8px;height:0;min-height:100%;min-width:0}
+.device-column .device-stage{margin:0;flex-shrink:0;height:220px}
+.device-column .device-panel{flex:1;min-height:0;height:auto}
+.device-column .device-panel .panel-header{padding:10px 12px 8px 14px}
+.device-column .device-body{padding-top:2px}
+.device-column .device-stage{height:196px}
+@media(max-width:850px){.device-column{height:auto;min-height:0}.device-column .device-panel{flex:none;max-height:420px}}
+/* 기기 정보 카드는 안쪽 스크롤 없이 내용 높이만큼 늘어난다 */
+.device-column{height:auto}
+.device-column .device-panel{flex:1 0 auto}
+.device-column .device-body{flex:none;overflow:visible}
+.device-panel .part-detail{margin-top:6px}
+/* 기기 정보·부품 지표: 제목과 값을 한 줄에 두어 카드 높이를 줄인다 */
+.device-panel .vehicle-facts>div,.device-panel .part-metrics>div{display:flex;align-items:baseline;justify-content:space-between;gap:6px;padding:5px 8px;min-width:0}
+.device-panel .vehicle-facts dt,.device-panel .part-metrics dt{flex-shrink:0;white-space:nowrap}
+.device-panel .vehicle-facts dd,.device-panel .part-metrics dd{margin:0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.device-panel .vehicle-facts,.device-panel .part-metrics{gap:5px}
+.device-panel .part-metrics{margin-top:8px}
+/* 부품 상태: 카드 대신 부품 사이 가로선 하나로 구분 */
+.device-panel .part-row{border:0;border-radius:0;background:transparent;margin:0;padding:6px 4px;border-bottom:1px solid #edf0f4}
+.device-panel .part-row:last-child{border-bottom:0}
+.device-panel .part-row:hover{background:#f6f8fb}
+.device-panel .part-row.warn,.device-panel .part-row.err{border-color:#edf0f4;background:transparent}
+.device-panel .part-row.err:hover,.device-panel .part-row.warn:hover{background:#f6f8fb}
+.device-panel .part-list-head{margin-bottom:2px}
+/* 부품 상태 행 높이 축소 */
+.device-panel .part-row{padding:3px 4px}
+.device-panel .part-row .part-level{padding:2px 6px}
+.device-panel .part-list{margin-top:8px}
+/* 부품 목록 ↔ 부품 상세 전환 시 카드 크기는 그대로, 내용만 바뀐다 */
+.device-column .device-body{height:238px;flex:none;overflow:hidden}
+/* 기기 정보: 카드 없이 세로 선으로 나눈 한 줄 */
+.device-panel .vehicle-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:6px 14px 0}
+.device-panel .vehicle-facts>div{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:0;background:transparent;padding:2px 4px;border-left:1px solid #e7ebf2}
+.device-panel .vehicle-facts>div:first-child{border-left:0}
+.device-panel .vehicle-facts dd{text-align:center;max-width:100%}
+.device-panel .vehicle-facts .alert{background:transparent;border-color:#e7ebf2}
+.device-panel .part-row{padding:5px 4px}
+/* 기기 정보 줄을 옅은 바탕으로 묶어 부품 상태와 구분 */
+.device-panel .vehicle-facts{background:#f4f6f9;border-radius:6px;padding:6px 0}
+.device-panel .vehicle-facts>div,.device-panel .vehicle-facts .alert{border-color:#e1e6ee}
+.device-panel .part-list{margin-top:12px}
+.device-panel .part-row{padding:4px 4px}
+.device-panel .part-list{margin-top:10px}
+/* 3D 모델 위 버튼(전체 차량 · 시점 고정)과 모델 아래 기기명·상태 */
+.device-stage-top{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;justify-content:space-between;pointer-events:none}
+.stage-btn{pointer-events:auto;gap:4px;font-size:9px;color:#5b6b80;background:rgba(255,255,255,.9);border:1px solid #e1e6ee;border-radius:4px;padding:4px 8px}
+.stage-btn:hover{color:#2f5f9e;border-color:#b6c9e4}
+.stage-btn:first-child>svg{transform:rotate(180deg)}
+.stage-btn.on{color:#fff;background:#2f5f9e;border-color:#2f5f9e}
+.device-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px}
+.device-head h2{font-size:15px;letter-spacing:-.3px;color:#28354a}
+.device-head .panel-sub{margin-top:3px}
+.device-column .device-body{padding-top:10px}
+.device-column .device-body{height:246px}
+/* 레일 맵 2D/3D 전환 */
+.seg{display:inline-flex;border:1px solid #dfe4ec;border-radius:5px;background:#fff;overflow:hidden}
+.seg button{font-size:9.5px;font-weight:600;color:#8391a4;padding:5px 9px;border-radius:0}
+.seg button+button{border-left:1px solid #e6eaf0}
+.seg button.on{background:#2f5f9e;color:#fff}
+.rail3d{position:absolute;inset:0}
+.rail3d canvas{touch-action:none}
+.rail3d-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.rail3d-labels>span{position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap}
+.rail3d-zone{font-size:10px;font-weight:600;color:#7e8b9e}
+.rail3d-tag{font-size:9px;font-weight:600;color:#607087;background:#fff;border:1px solid #e1e6ed;border-radius:3px;padding:1px 5px}
+.rail3d-tag.err{color:#b34646}
+.rail3d-tag.selected{background:#2f5f9e;border-color:#2f5f9e;color:#fff;font-size:10px;padding:2px 7px}
+/* 레일 맵 안에서 기기 상세: 왼쪽 위 돌아가기 + 위치, 좌우 앞·뒤 차량 이동 */
+.map-follow{position:absolute;left:2px;top:2px;z-index:2;display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.4px;color:#8695a9}
+.stage-btn.back>svg{transform:rotate(180deg)}
+.map-tools .stage-btn{padding:6px 9px}
+.rail-map .device-nav{z-index:2}
+.rail-map .device-nav small{font-size:9px}
+/* 차량을 따라가는 동안 맵 오른쪽 아래에 크게 보이는 기기명 */
+.map-vehicle-name{position:absolute;right:4px;bottom:6px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:none;text-shadow:0 1px 2px rgba(253,253,253,.9)}
+.map-vehicle-name strong{font-size:30px;font-weight:750;letter-spacing:-.8px;line-height:1;color:#28354a}
+.map-vehicle-name span{font-size:10px;color:#7d8ba0;letter-spacing:.2px}
+/* 부품 상태: 다시 부품마다 카드로, 상태 점 대신 부품 모양 아이콘(상태 색) */
+.device-panel .part-row{grid-template-columns:24px 52px minmax(0,1fr) auto;gap:8px;padding:5px 8px 5px 6px;margin:0 0 5px;border:1px solid #edf0f4;border-radius:6px;background:#fff}
+.device-panel .part-row:last-child{margin-bottom:0;border-bottom:1px solid #edf0f4}
+.device-panel .part-row:hover{border-color:#b6c9e4;background:#f6f9fd}
+.device-panel .part-row.warn{border-color:#f1e2c4;background:#fffdf8}
+.device-panel .part-row.err{border-color:#efc9c9;background:#fffafa}
+.device-panel .part-row.silent{border-color:#ddd5ee;background:#fbfaff}
+.device-panel .part-row.warn:hover,.device-panel .part-row.err:hover,.device-panel .part-row.silent:hover{border-color:#b6c9e4;background:#f6f9fd}
+.part-icon{display:block;flex-shrink:0;color:#53877d}
+.part-row.warn .part-icon,.cs-head.warn .part-icon{color:#d69b3b}
+.part-row.err .part-icon,.cs-head.err .part-icon{color:#cd5b5b}
+.part-row.silent .part-icon,.cs-head.silent .part-icon{color:#8e7cc3}
+.cs-head.ok .part-icon{color:#53877d}
+.device-panel .part-row{padding:4px 8px 4px 6px;margin-bottom:4px;grid-template-columns:22px 52px minmax(0,1fr) auto}
+/* 카드형 부품 목록이 들어가도록 높이를 맞추고, 부품 상세는 같은 높이를 채운다(카드 크기는 그대로, 내용만 바뀜) */
+.device-column .device-body{height:301px;display:flex;flex-direction:column}
+.device-panel .part-detail{flex:1;display:flex;flex-direction:column;margin-bottom:0}
+.device-panel .part-detail>button{margin-top:auto}
+.cs-head .part-icon{margin-left:2px}
+/* 이상·주의 건수: 오류(빨강)·경고(주황) 상태 색. 0건은 회색 */
+.fact-counts dd{display:flex;align-items:baseline;justify-content:center;gap:4px}
+.fact-counts dd i{font-style:normal;color:#b3bcc8;font-weight:400}
+.fact-counts .n-err,.fact-counts .n-warn{color:#a3adbb}
+.fact-counts .n-err.on{color:#cd5b5b}
+.fact-counts .n-warn.on{color:#d69b3b}
+/* 오른쪽 카드: 내용 영역이 카드 높이를 채우고, 부품 카드는 남는 높이를 고르게 나눠 갖는다 */
+.device-column .device-body{height:auto;flex:1 1 auto;min-height:301px}
+.device-panel .part-list{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+.device-panel .part-list .part-row{flex:1 1 0;min-height:30px;max-height:48px}
+.device-panel .part-list .part-row small{white-space:nowrap}

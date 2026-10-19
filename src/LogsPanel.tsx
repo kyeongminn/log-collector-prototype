@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Badge, Icon } from './ui';
 import { CATEGORIES, SEVERITY_LABEL, SEVERITY_OPTIONS, fmtClock, type LogLine } from './logs/logStream';
 import { UI } from './logs/messages';
@@ -39,7 +39,10 @@ interface Props {
   onDetail: (l: LogLine) => void;
 }
 
-export default function LogsPanel(p: Props) {
+/** 로그 표. 로그 줄·필터가 바뀔 때만 다시 그린다(memo) */
+export default memo(LogsPanel);
+
+function LogsPanel(p: Props) {
   const pageSize = p.overview ? 5 : 10;
   const [pageIdx, setPageIdx] = useState(0);
   const pages = Math.max(1, Math.ceil(p.filtered.length / pageSize));
@@ -70,7 +73,9 @@ export default function LogsPanel(p: Props) {
         <button className="icon-button" aria-label="필터 초기화" onClick={reset}><Icon name="refresh" size={15} /></button>
       </div>
       <div className="table-scroll">
-        <table>
+        <table className="logs-table">
+          {/* 열 너비 고정: 새 로그가 들어와도 너비가 바뀌지 않게 한다. 메시지 열이 남는 폭을 쓴다 */}
+          <colgroup><col className="c-time" /><col className="c-vehicle" /><col className="c-cat" /><col className="c-level" /><col className="c-sev" /><col /><col className="c-go" /></colgroup>
           <thead><tr><th>발생 시각 <span>↓</span></th><th>차량</th><th>카테고리</th><th>레벨</th><th>판정</th><th>메시지</th><th /></tr></thead>
           <tbody>{rows.map(l => (
             <tr key={l.id} onClick={() => p.onDetail(l)} tabIndex={0} onKeyDown={e => e.key === 'Enter' && p.onDetail(l)} className={l.severity === 'ERROR' ? 'error-row' : l.severity === 'WARN' ? 'warn-row' : ''}>

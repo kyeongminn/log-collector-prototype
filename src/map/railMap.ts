@@ -39,6 +39,18 @@ export interface RailMap {
   nodeById: Map<number, MapNode>;
 }
 
+/** 레일 맵에서 확대해 보여줄 영역(m) */
+export interface MapRect { x: number; y: number; w: number; h: number }
+
+/** 확대할 영역: 기기 상세가 열려 있으면 그 차량이 속한 구역(외곽 레일이면 차량 주변), 아니면 구역 선택값. 없으면 전체 보기. */
+export function focusRect(map: RailMap, zone: string, vehicle?: { area: string; x: number; y: number } | null): MapRect | null {
+  const area = vehicle ? vehicle.area : zone;
+  const z = map.zones.find(q => q.id === area);
+  if (z) return { x: z.x, y: z.y, w: z.w, h: z.h };
+  if (vehicle) return { x: vehicle.x - 12, y: vehicle.y - 3.5, w: 24, h: 7 };
+  return null;
+}
+
 export interface Pose { x: number; y: number; heading: number }
 
 /** 링크 위 진행률(0..1)에 해당하는 좌표와 진행 방향(라디안)을 돌려준다. */
@@ -55,6 +67,8 @@ export function poseOnLink(map: RailMap, link: MapLink, t: number): Pose {
 }
 
 const CORNER_R = 1.2;
+/** 베이 진입·진출 연결 레일이 외곽 루프에 붙는 지점의 베이 밖 거리(m). 이웃 베이의 진출·진입 레일이 서로 엇갈려 교차하지 않도록 베이 사이 간격(3 m)의 절반보다 작게 둔다 */
+const CONN_OFFSET = 0.5;
 const STRAIGHT_LEN = 1.6;
 
 class Builder {
@@ -174,19 +188,19 @@ export function buildRailMap(opts: MapOptions = {}): RailMap {
       // 외곽 루프와 베이를 잇는 분기(진입)·합류(진출) 링크
       if (row === 0) {
         // 위쪽 베이: 외곽 상단 변(왼→오)에서 베이 상단 변으로 들어가고, 베이 상단 변 끝에서 외곽으로 나간다
-        const entryMain = b.nearest(main.top, bx - 2.5);
+        const entryMain = b.nearest(main.top, bx - CONN_OFFSET);
         const entryBay = bay.top[0];
         b.run(entryMain, entryBay, 'connector');
         const exitBay = bay.top[bay.top.length - 1];
-        const exitMain = b.nearest(main.top, bx + bayW + 2.5);
+        const exitMain = b.nearest(main.top, bx + bayW + CONN_OFFSET);
         b.run(exitBay, exitMain, 'connector');
       } else {
         // 아래쪽 베이: 외곽 하단 변(오→왼)에서 베이 하단 변으로 들어간다
-        const entryMain = b.nearest(main.bottom, bx + bayW + 2.5);
+        const entryMain = b.nearest(main.bottom, bx + bayW + CONN_OFFSET);
         const entryBay = bay.bottom[0];
         b.run(entryMain, entryBay, 'connector');
         const exitBay = bay.bottom[bay.bottom.length - 1];
-        const exitMain = b.nearest(main.bottom, bx - 2.5);
+        const exitMain = b.nearest(main.bottom, bx - CONN_OFFSET);
         b.run(exitBay, exitMain, 'connector');
       }
 

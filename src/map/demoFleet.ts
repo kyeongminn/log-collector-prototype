@@ -8,6 +8,7 @@
 
 import type { LogEvent, LinkTypeName } from './logParser';
 import { CMD } from '../logs/messages';
+import { TRAFFIC_DEC } from './traffic';
 
 export type DemoStatus = '운행' | '대기' | '경고' | '오류' | '무수신';
 
@@ -83,6 +84,8 @@ function makeTrack(rng: () => number, n = 40): TrackLink[] {
 export class DemoFleet {
   readonly vehicles: DemoVehicle[] = [];
   readonly faults: Record<string, DemoStatus>;
+  /** 앞 차량과의 간격 때문에 걸린 속도 상한(mm/s). 맵 위 간격 제어(traffic.ts)가 매 틱 넣는다 */
+  private caps = new Map<string, number>();
 
   constructor(opts: DemoOptions, private t0: number) {
     const base = opts.seed ?? 1;
@@ -99,6 +102,8 @@ export class DemoFleet {
       this.vehicles.push(v);
     }
   }
+
+  setCaps(caps: Map<string, number>) { this.caps = caps; }
 
   status(v: DemoVehicle): DemoStatus { return v.fault ?? (v.driving ? '운행' : '대기'); }
 
@@ -131,7 +136,10 @@ export class DemoFleet {
         const toNext = v.cum[v.linkIdx + 1] - v.s;
         vmax = Math.min(vmax, Math.sqrt(nxt.speed ** 2 + 2 * DEC * Math.max(0, toNext)));
       }
-      v.v = v.v < vmax ? Math.min(vmax, v.v + ACC * dt) : Math.max(vmax, v.v - DEC * dt);
+      // 앞 차량 때문에 속도 상한이 걸리면 그 아래로 감속한다(필요하면 더 세게)
+      const cap = this.caps.get(v.id);
+      if (cap !== undefined) vmax = Math.min(vmax, cap);
+      v.v = v.v < vmax ? Math.min(vmax, v.v + ACC * dt) : Math.max(vmax, v.v - (cap !== undefined ? TRAFFIC_DEC : DEC) * dt);
       v.s += v.v * dt;
       // 다음 링크 명령은 현재 링크의 30% 지점을 지나면 보낸다(시뮬레이터와 같은 후속 명령 타이밍)
       if (v.commanded < v.route.length && v.commanded === v.linkIdx + 1 && v.s >= v.cum[v.linkIdx] + 0.3 * lk.len) {
